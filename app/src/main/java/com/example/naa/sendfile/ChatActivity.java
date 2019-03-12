@@ -1,38 +1,26 @@
 package com.example.naa.sendfile;
 
-import android.*;
+
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.database.Cursor;
+import android.net.Uri;
 import android.os.Environment;
+import android.provider.MediaStore;
 import android.support.annotation.NonNull;
-import android.support.v4.app.ActivityCompat;
-import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
-
-        import android.content.Intent;
-        import android.graphics.Bitmap;
-        import android.net.Uri;
-        import android.provider.MediaStore;
-        import android.support.v7.app.AppCompatActivity;
-        import android.os.Bundle;
+import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
-        import android.widget.Button;
+import android.widget.Button;
 import android.widget.ImageButton;
-import android.widget.ImageView;
 import android.widget.Toast;
 import android.widget.VideoView;
 
-import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.android.gms.tasks.Task;
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.OnProgressListener;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
@@ -40,63 +28,61 @@ import com.google.firebase.storage.UploadTask;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.ArrayList;
 import java.util.Calendar;
 
-public class MainActivity extends AppCompatActivity implements View.OnClickListener /*  implementing click listener */ {
-    //a constant to track the file chooser intent
-//    Adapter_VideoFolder obj_adapter;
-//    ArrayList<Model_Video> al_video = new ArrayList<>();
-    private static final int PICK_VIDEO_REQUEST = 234;
-    private static final String VIDEO_DIRECTORY = "/demonuts";
-//    private static final int PICK_IMAGE_REQUEST = 234;
+public class ChatActivity extends AppCompatActivity {
 
-    //Buttons
-    private Button buttonChoose;
+    private Button btn;
     private Button buttonUpload;
-
-    //ImageView
-//    private ImageView imageView;
     private VideoView videoView;
     public StorageReference mStorageRef;
-    private int GALLERY = 1, CAMERA = 2;
 
-    //a Uri object to store file path
     private Uri filePath;
+    private static final String VIDEO_DIRECTORY = "/demonuts";
+    private int GALLERY = 1, CAMERA = 2;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_sent);
 
-        FirebaseStorage storage;
-        StorageReference storageRef;
-
-        mStorageRef = FirebaseStorage.getInstance().getReference();
-
-        //getting views from layout
-        buttonChoose = (Button) findViewById(R.id.btn);
+        btn = (Button) findViewById(R.id.btn);
         buttonUpload = (Button) findViewById(R.id.buttonUpload);
         videoView = (VideoView) findViewById(R.id.vv);
 
-//        imageView = (ImageView) findViewById(R.id.imageView);
+        btn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                showPictureDialog();
+            }
+        });
 
-        //attaching listener
-        buttonChoose.setOnClickListener(this);
-        buttonUpload.setOnClickListener(this);
+
+        buttonUpload.setOnClickListener(new View.OnClickListener()
+        {
+            @Override
+            public void onClick(View v){
+                uploadFile();
+            }
+        });
 
     }
 
 
-    //method to show file chooser
-//    private void showFileChooser() {
-//        Intent intent = new Intent();
-//        intent.setType("video/*");
-//        intent.setAction(Intent.ACTION_GET_CONTENT);
-//        startActivityForResult(Intent.createChooser(intent, "Select Image"), GALLERY);
+//    @Override
+//    public void onClick(View view) {
+//        //if the clicked button is choose
+//        if (view == btn) {
+////            fn_checkpermission();
+//            showPictureDialog();
+//        }
+//        //if the clicked button is upload
+//        else if (view == buttonUpload) {
+//            uploadFile();
+//
+//        }
 //    }
 
     private void showPictureDialog(){
@@ -111,7 +97,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     public void onClick(DialogInterface dialog, int which) {
                         switch (which) {
                             case 0:
-                                chooseVideoFromGallery();
+                                chooseVideoFromGallary();
                                 break;
                             case 1:
                                 takeVideoFromCamera();
@@ -122,7 +108,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         pictureDialog.show();
     }
 
-    public void chooseVideoFromGallery() {
+    public void chooseVideoFromGallary() {
         Intent galleryIntent = new Intent(Intent.ACTION_PICK,
                 android.provider.MediaStore.Video.Media.EXTERNAL_CONTENT_URI);
 
@@ -134,38 +120,38 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         startActivityForResult(intent, CAMERA);
     }
 
-    //handling the image chooser activity result
     @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
 
+        Log.d("result",""+resultCode);
+        super.onActivityResult(requestCode, resultCode, data);
         if (resultCode == this.RESULT_CANCELED) {
             Log.d("what","cancle");
             return;
         }
-
-            if (requestCode == GALLERY && resultCode == RESULT_OK && data != null && data.getData() != null) {
-                filePath = data.getData();
-
+        if (requestCode == GALLERY) {
+            Log.d("what","gale");
+            if (data != null) {
                 Uri contentURI = data.getData();
 
                 String selectedVideoPath = getPath(contentURI);
-                Log.d("path", selectedVideoPath);
+                Log.d("path",selectedVideoPath);
+                saveVideoToInternalStorage(selectedVideoPath);
                 videoView.setVideoURI(contentURI);
                 videoView.requestFocus();
                 videoView.start();
-//                Bitmap bitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), filePath);
-//                imageView.setImageBitmap(bitmap);
+
             }
-            else if (requestCode == CAMERA) {
-                Uri contentURI = data.getData();
-                String recordedVideoPath = getPath(contentURI);
-                Log.d("frrr",recordedVideoPath);
-                saveVideoToInternalStorage(recordedVideoPath);
-                videoView.setVideoURI(contentURI);
-//                videoView.requestFocus();
-//                videoView.start();
-            }
+
+        } else if (requestCode == CAMERA) {
+            Uri contentURI = data.getData();
+            String recordedVideoPath = getPath(contentURI);
+            Log.d("frrr",recordedVideoPath);
+            saveVideoToInternalStorage(recordedVideoPath);
+            videoView.setVideoURI(contentURI);
+            videoView.requestFocus();
+            videoView.start();
+        }
     }
 
     private void saveVideoToInternalStorage (String filePath) {
@@ -205,6 +191,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
 
     }
+
     public String getPath(Uri uri) {
         String[] projection = { MediaStore.Video.Media.DATA };
         Cursor cursor = getContentResolver().query(uri, projection, null, null, null);
@@ -219,32 +206,16 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             return null;
     }
 
-    @Override
-    public void onClick(View view) {
-        //if the clicked button is choose
-        if (view == buttonChoose) {
-//            fn_checkpermission();
-//                showFileChooser();
-            showPictureDialog();
-        }
-        //if the clicked button is upload
-        else if (view == buttonUpload) {
-            uploadFile();
-
-        }
-    }
-    //this method will upload the file
     private void uploadFile() {
         //if there is a file to upload
-        if (filePath != null) {
+        if (filePath!= null) {
+
             //displaying a progress dialog while upload is going on
             final ProgressDialog progressDialog = new ProgressDialog(this);
-            progressDialog.setTitle("Sending");
+            progressDialog.setTitle("Uploading");
             progressDialog.show();
 
-            String filename = "Vid";
-
-            StorageReference riversRef = mStorageRef.child("/videos/ " + filename +".mp4");
+            StorageReference riversRef = mStorageRef.child("videos/Vid.mp4");
             riversRef.putFile(filePath)
                     .addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
                         @Override
@@ -254,7 +225,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                             progressDialog.dismiss();
 
                             //and displaying a success toast
-//                            Toast.makeText(getApplicationContext(), "File Uploaded ", Toast.LENGTH_LONG).show();
+                            Toast.makeText(getApplicationContext(), "File Uploaded ", Toast.LENGTH_LONG).show();
                         }
                     })
                     .addOnFailureListener(new OnFailureListener() {
@@ -275,13 +246,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                             double progress = (100.0 * taskSnapshot.getBytesTransferred()) / taskSnapshot.getTotalByteCount();
 
                             //displaying percentage in progress dialog
-                            progressDialog.setMessage("Sent " + ((int) progress) + "%...");
+                            progressDialog.setMessage("Uploaded " + ((int) progress) + "%...");
                         }
                     });
         }
         //if there is not any file
         else {
-            Toast.makeText(getApplicationContext(), "Error", Toast.LENGTH_SHORT).show(); //you can display an error toast
+            Toast.makeText(getApplicationContext(), "Nothing to upload", Toast.LENGTH_SHORT).show(); //you can display an error toast
         }
     }
 
